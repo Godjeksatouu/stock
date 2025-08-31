@@ -165,10 +165,72 @@ export async function GET(request: NextRequest) {
       const files = Array.isArray(rows) ? rows as any[] : []
 
       if (files.length === 0) {
-        return NextResponse.json(
-          { success: false, error: 'Original invoice not found for this sale' },
-          { status: 404 }
-        )
+        // No stored PDF found, generate A4 format invoice for manual sales
+        console.log('📄 No stored PDF found for manual sale, generating A4 format invoice')
+
+        try {
+          const { generateImprovedA4InvoicePDF } = await import('@/lib/a4-invoice-generator-improved')
+          const { STOCK_SLUGS, STOCK_NAMES } = await import('@/lib/types')
+
+          // Get sale details with items
+          const saleResponse = await fetch(`${request.nextUrl.origin}/api/sales/${saleId}`)
+          const saleResult = await saleResponse.json()
+
+          if (!saleResult.success) {
+            throw new Error('Failed to fetch sale details')
+          }
+
+          const saleData = saleResult.data
+          const stockSlug = (STOCK_SLUGS as any)[sale.stock_id] || 'al-ouloum'
+          const stockName = (STOCK_NAMES as any)[sale.stock_id] || 'Librairie Al Ouloum'
+
+          // Prepare A4 invoice data
+          const invoiceData = {
+            invoiceNumber: sale.invoice_number || `SALE-${sale.id}`,
+            date: new Date(sale.created_at).toLocaleDateString('fr-FR'),
+            customerName: saleData.customer_name || 'Client anonyme',
+            customerPhone: saleData.customer_phone || undefined,
+            customerAddress: saleData.customer_address || undefined,
+            items: (saleData.items || []).map((it: any) => ({
+              product_name: it.product_name,
+              quantity: Number(it.quantity),
+              unit_price: Number(it.unit_price),
+              total_price: Number(it.total_price ?? (Number(it.quantity) * Number(it.unit_price)))
+            })),
+            subtotal: Number(sale.total),
+            discount: 0,
+            tax: 0,
+            total: Number(sale.total),
+            amountPaid: Number(sale.amount_paid ?? saleData.amount_paid ?? sale.total),
+            change: Number(sale.change_amount ?? 0),
+            paymentMethod: sale.payment_method || 'cash',
+            notes: sale.notes || undefined,
+            stockId: stockSlug,
+            stockName: stockName,
+            factureBarcode: saleData.sale_barcode || undefined,
+            barcodes: saleData.sale_barcode || undefined
+          }
+
+          // Generate A4 PDF
+          const pdf = generateImprovedA4InvoicePDF(invoiceData)
+          const pdfBuffer = Buffer.from(pdf.output('arraybuffer'))
+
+          return new NextResponse(pdfBuffer, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="facture_A4_${sale.invoice_number || sale.id}.pdf"`,
+              'Content-Length': pdfBuffer.length.toString(),
+            }
+          })
+
+        } catch (fallbackError) {
+          console.error('❌ Error generating A4 fallback invoice:', fallbackError)
+          return NextResponse.json(
+            { success: false, error: 'Original invoice not found for this sale and A4 fallback generation failed' },
+            { status: 404 }
+          )
+        }
       }
 
       const { filename, file_data } = files[0]

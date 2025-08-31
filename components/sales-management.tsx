@@ -112,99 +112,70 @@ export default function SalesManagement({ stockId }: SalesManagementProps) {
       const isFromCaisse = sale.source === 'pos'
       console.log(`🧾 Téléchargement de la facture ${isFromCaisse ? 'Caisse (ticket)' : 'Vente'} pour la vente:`, sale.id)
 
-      if (isFromCaisse) {
-        // Pour les ventes de caisse, générer un ticket
-        await generateCaisseInvoice(sale)
-      } else {
-        // Pour les ventes manuelles, télécharger la facture stockée
-        const response = await fetch(`/api/invoices/download?sale_id=${sale.id}`)
-        if (response.ok) {
-          const blob = await response.blob()
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = `facture_${sale.invoice_number || sale.sale_number}.pdf`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          setTimeout(() => URL.revokeObjectURL(url), 1000)
+      // Use the unified API endpoint for both POS and manual sales
+      const response = await fetch(`/api/invoices/download?sale_id=${sale.id}`)
 
-          toast({
-            title: 'Facture téléchargée',
-            description: 'La facture a été téléchargée avec succès',
-            duration: 3000
-          })
-        } else {
-          throw new Error('Facture non trouvée')
-        }
+      if (response.ok) {
+        const contentType = response.headers.get('content-type')
+        const blob = await response.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+
+        // Determine file extension based on content type
+        const fileExtension = contentType?.includes('pdf') ? 'pdf' : 'html'
+        a.download = `${isFromCaisse ? 'ticket' : 'facture'}_${sale.invoice_number || sale.sale_number}.${fileExtension}`
+
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+
+        toast({
+          title: isFromCaisse ? 'Ticket téléchargé' : 'Facture téléchargée',
+          description: `Le ${isFromCaisse ? 'ticket' : 'facture'} a été téléchargé avec succès`,
+          duration: 3000
+        })
+      } else {
+        // Get more detailed error information
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }))
+        const errorMessage = errorData.error || 'Document non trouvé'
+
+        console.warn('❌ Erreur téléchargement:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorMessage,
+          saleId: sale.id,
+          saleSource: sale.source
+        })
+
+        throw new Error(errorMessage)
       }
 
     } catch (error) {
-      console.error('❌ Erreur téléchargement facture:', error)
+      console.error('❌ Erreur téléchargement:', error)
+
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+      const isFromCaisse = sale.source === 'pos'
+      let description = `Impossible de télécharger ${isFromCaisse ? 'le ticket' : 'la facture'}`
+
+      // Provide more specific error messages
+      if (errorMessage.includes('not found') || errorMessage.includes('non trouvé')) {
+        description = isFromCaisse
+          ? "Erreur lors de la génération du ticket de caisse"
+          : "Aucune facture PDF stockée n'a été trouvée pour cette vente manuelle"
+      } else if (errorMessage.includes('Failed to generate') || errorMessage.includes('Failed to fetch')) {
+        description = "Erreur lors de la récupération des données de vente"
+      } else if (errorMessage.includes('Original invoice not found')) {
+        description = "Cette vente n'a pas de facture PDF stockée. Elle peut avoir été créée avant l'implémentation du système de stockage des factures."
+      }
+
       toast({
-        title: "Erreur",
-        description: "Impossible de télécharger la facture",
+        title: "Erreur de téléchargement",
+        description,
         variant: "destructive",
         duration: 5000
       })
-    }
-  }
-
-  const generateCaisseInvoice = async (sale: Sale) => {
-    try {
-      // Récupérer les détails de la vente pour la facture caisse
-      const response = await fetch(`/api/sales/${sale.id}`)
-      const result = await response.json()
-
-      if (!result.success) {
-        throw new Error('Impossible de récupérer les détails de la vente')
-      }
-
-      const saleDetails = result.data
-      const { getStockInfo } = await import('@/lib/ticket-invoice-generator')
-      const stockInfo = getStockInfo(stockId)
-
-      // Préparer les données pour la facture caisse (8cm)
-      const ticketData = {
-        id: sale.id,
-        invoiceNumber: sale.invoice_number || sale.sale_number,
-        date: sale.created_at,
-        stockName: stockInfo.name,
-        stockId: stockId,
-        stockInfo: {
-          address: stockInfo.address,
-          phone: stockInfo.phone,
-          email: stockInfo.email
-        },
-        client: sale.customer_name && sale.customer_name !== 'Client anonyme' ? {
-          name: sale.customer_name
-        } : undefined,
-        items: saleDetails.items || [],
-        subtotal: parseFloat(sale.total_amount?.toString() || '0'),
-        total: parseFloat(sale.total_amount?.toString() || '0'),
-        payment_method: sale.payment_method,
-        payment_status: sale.payment_status,
-        amount_paid: sale.amount_paid,
-        changeAmount: sale.change_amount,
-        notes: sale.notes,
-        barcode: sale.barcodes || sale.sale_barcode,
-        showPaymentInfo: true,
-        showSellerInfo: false
-      }
-
-      // Importer et utiliser le générateur de ticket
-      const { downloadTicketInvoiceHTML } = await import('@/lib/ticket-invoice-generator')
-      downloadTicketInvoiceHTML(ticketData)
-
-      toast({
-        title: "Facture Caisse générée !",
-        description: "La facture 8cm a été téléchargée",
-        duration: 3000
-      })
-
-    } catch (error) {
-      console.error('❌ Erreur génération facture caisse:', error)
-      throw error
     }
   }
 
