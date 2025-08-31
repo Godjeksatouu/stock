@@ -23,10 +23,36 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
+        {/* Meta tags to help prevent browser extension interference */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="format-detection" content="telephone=no" />
+        {/* Early script to prevent browser extension hydration issues */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Early cleanup of browser extension attributes
+              (function() {
+                const cleanup = () => {
+                  const attrs = ['bis_skin_checked', 'data-lastpass-icon-root', 'data-1p-ignore', 'data-bitwarden-watching'];
+                  attrs.forEach(attr => {
+                    document.querySelectorAll('[' + attr + ']').forEach(el => el.removeAttribute(attr));
+                  });
+                };
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', cleanup);
+                } else {
+                  cleanup();
+                }
+                // Also run cleanup periodically
+                setInterval(cleanup, 1000);
+              })();
+            `
+          }}
+        />
         {/* Scripts moved to ClientScripts component to avoid hydration issues */}
       </head>
       <body className={inter.className} suppressHydrationWarning={true}>
-        <div suppressHydrationWarning>
+        <div suppressHydrationWarning={true}>
           <ClientScripts />
           <CashierRouteGuard>
             {children}

@@ -3,13 +3,23 @@
 @tailwind utilities;
 
 /* Fix for browser extension hydration issues */
-[bis_skin_checked] {
+[bis_skin_checked],
+[data-lastpass-icon-root],
+[data-1p-ignore],
+[data-bitwarden-watching],
+[data-dashlane-rid],
+[data-dashlane-observed],
+[data-lpignore],
+[data-form-type] {
   /* Ensure browser extension attributes don't affect layout */
+  /* These attributes are commonly added by password managers and other extensions */
+  /* Suppress any visual changes these attributes might cause */
 }
 
 /* Suppress hydration warnings for elements commonly modified by browser extensions */
-html, body, div {
+html, body, div, input, form {
   /* These elements are commonly modified by browser extensions */
+  /* The suppressHydrationWarning prop in React handles the hydration mismatch */
 }
 
 @layer base {

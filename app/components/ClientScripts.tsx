@@ -14,15 +14,31 @@ export default function ClientScripts() {
 
     // Clean up browser extension attributes that cause hydration issues
     const cleanupBrowserExtensionAttributes = () => {
-      const elementsWithBisAttributes = document.querySelectorAll('[bis_skin_checked]')
-      elementsWithBisAttributes.forEach(element => {
-        element.removeAttribute('bis_skin_checked')
+      // Remove common browser extension attributes
+      const selectors = [
+        '[bis_skin_checked]',
+        '[data-lastpass-icon-root]',
+        '[data-1p-ignore]',
+        '[data-bitwarden-watching]',
+        '[data-dashlane-rid]',
+        '[data-dashlane-observed]'
+      ]
+
+      selectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector)
+        elements.forEach(element => {
+          const attributeName = selector.slice(1, -1) // Remove [ and ]
+          element.removeAttribute(attributeName)
+        })
       })
     }
 
-    // Run cleanup immediately and after a short delay
+    // Run cleanup multiple times to catch extensions that add attributes later
     cleanupBrowserExtensionAttributes()
+    setTimeout(cleanupBrowserExtensionAttributes, 50)
     setTimeout(cleanupBrowserExtensionAttributes, 100)
+    setTimeout(cleanupBrowserExtensionAttributes, 200)
+    setTimeout(cleanupBrowserExtensionAttributes, 500)
 
     // Load scripts on client side to avoid hydration issues
     const scripts = [
@@ -69,17 +85,38 @@ export default function ClientScripts() {
     // Set up a mutation observer to clean up browser extension attributes as they're added
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'bis_skin_checked') {
+        if (mutation.type === 'attributes') {
           const target = mutation.target as Element
-          target.removeAttribute('bis_skin_checked')
+          const attributeName = mutation.attributeName
+
+          // Remove known browser extension attributes
+          const extensionAttributes = [
+            'bis_skin_checked',
+            'data-lastpass-icon-root',
+            'data-1p-ignore',
+            'data-bitwarden-watching',
+            'data-dashlane-rid',
+            'data-dashlane-observed'
+          ]
+
+          if (attributeName && extensionAttributes.includes(attributeName)) {
+            target.removeAttribute(attributeName)
+          }
         }
       })
     })
 
-    // Start observing
+    // Start observing with expanded attribute filter
     observer.observe(document.body, {
       attributes: true,
-      attributeFilter: ['bis_skin_checked'],
+      attributeFilter: [
+        'bis_skin_checked',
+        'data-lastpass-icon-root',
+        'data-1p-ignore',
+        'data-bitwarden-watching',
+        'data-dashlane-rid',
+        'data-dashlane-observed'
+      ],
       subtree: true
     })
 
