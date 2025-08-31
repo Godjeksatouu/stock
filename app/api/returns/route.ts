@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate return type
-    if (!['return', 'exchange'].includes(return_type)) {
+    if (!['refund', 'exchange'].includes(return_type)) {
       return NextResponse.json(
         { success: false, error: 'Invalid return type' },
         { status: 400 }
