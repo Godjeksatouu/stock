@@ -56,7 +56,7 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
   const [loading, setLoading] = useState(false)
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([])
-  const [returnType, setReturnType] = useState<'return' | 'exchange'>('return')
+  const [returnType, setReturnType] = useState<'refund' | 'exchange'>('refund')
   const [returnReason, setReturnReason] = useState('')
   const [customerNotes, setCustomerNotes] = useState('')
 
@@ -193,7 +193,7 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
         // 1) Notify
         toast({
           title: "Retour enregistré",
-          description: `${returnType === 'return' ? 'Retour' : 'Échange'} #${result.data.id} créé avec succès`,
+          description: `${returnType === 'refund' ? 'Retour' : 'Échange'} #${result.data.id} créé avec succès`,
           duration: 2000
         })
 
@@ -327,8 +327,8 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
           <div className="space-y-4">
             <div className="flex gap-4">
               <Button
-                variant={returnType === 'return' ? 'default' : 'outline'}
-                onClick={() => setReturnType('return')}
+                variant={returnType === 'refund' ? 'default' : 'outline'}
+                onClick={() => setReturnType('refund')}
                 className="flex items-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -345,7 +345,7 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="return-reason">Raison du {returnType === 'return' ? 'retour' : 'échange'}</Label>
+              <Label htmlFor="return-reason">Raison du {returnType === 'refund' ? 'retour' : 'échange'}</Label>
               <Select value={returnReason} onValueChange={setReturnReason}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner une raison" />
@@ -378,7 +378,7 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
       {/* Items Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Articles à {returnType === 'return' ? 'retourner' : 'échanger'}</CardTitle>
+          <CardTitle>Articles à {returnType === 'refund' ? 'retourner' : 'échanger'}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -402,7 +402,7 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Quantity Selection */}
                     <div className="space-y-2">
-                      <Label>Quantité à {returnType === 'return' ? 'retourner' : 'échanger'}</Label>
+                      <Label>Quantité à {returnType === 'refund' ? 'retourner' : 'échanger'}</Label>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -486,7 +486,7 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-medium text-blue-900">Résumé du {returnType === 'return' ? 'retour' : 'échange'}</h4>
+                  <h4 className="font-medium text-blue-900">Résumé du {returnType === 'refund' ? 'retour' : 'échange'}</h4>
                   <p className="text-sm text-blue-700">
                     {getReturnItemsCount()} article(s) sélectionné(s)
                   </p>
@@ -496,7 +496,7 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
                     {formatPrice(getTotalReturnAmount())}
                   </div>
                   <div className="text-sm text-blue-700">
-                    {returnType === 'return' ? 'Montant à rembourser' : 'Valeur d\'échange'}
+                    {returnType === 'refund' ? 'Montant à rembourser' : 'Valeur d\'échange'}
                   </div>
                 </div>
               </div>
@@ -523,7 +523,7 @@ export default function ReturnExchangeForm({ sale, onClose, onSuccess }: ReturnE
           ) : (
             <>
               <RotateCcw className="w-4 h-4 mr-2" />
-              Confirmer le {returnType === 'return' ? 'retour' : 'échange'}
+              Confirmer le {returnType === 'refund' ? 'retour' : 'échange'}
             </>
           )}
         </Button>
