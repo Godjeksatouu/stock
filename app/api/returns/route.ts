@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         if (riCols.includes('return_transaction_id')) { cols.push('return_transaction_id'); vals.push(returnTransactionId) }
         if (riCols.includes('original_sale_item_id')) { cols.push('original_sale_item_id'); vals.push(item.original_sale_item_id || null) }
         if (riCols.includes('product_id')) { cols.push('product_id'); vals.push(item.product_id) }
-        if (riCols.includes('action_type')) { cols.push('action_type'); vals.push(return_type === 'return' ? 'return' : 'exchange_out') }
+        if (riCols.includes('action_type')) { cols.push('action_type'); vals.push(return_type === 'return' ? 'return' : 'exchange_in') }
         if (riCols.includes('quantity')) { cols.push('quantity'); vals.push(item.quantity) }
         if (riCols.includes('unit_price')) { cols.push('unit_price'); vals.push(item.unit_price) }
         if (riCols.includes('total_amount')) { cols.push('total_amount'); vals.push(item.total_amount || (item.quantity * item.unit_price)) }
@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
         if (riCols.includes('condition_notes')) { cols.push('condition_notes'); vals.push(item.condition_notes || null) }
 
         const placeholders = cols.map(() => '?').join(', ')
+        console.log(vals)
         await pool.query(
           `INSERT INTO return_items (${cols.join(', ')}) VALUES (${placeholders})`,
           vals
