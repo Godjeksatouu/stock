@@ -108,12 +108,18 @@ export default function SuperAdminPage() {
   const navigateToStock = (stockId: string) => {
     console.log('🔄 Superadmin accessing stock:', stockId)
 
-    // Store superadmin context
-    localStorage.setItem('superadmin_context', JSON.stringify({
-      original_user: user,
-      access_time: new Date().toISOString(),
-      target_stock: stockId
-    }))
+    // Store the original super admin session for restoration later
+    const currentUser = localStorage.getItem('user')
+    if (currentUser) {
+      localStorage.setItem('superadmin_context', JSON.stringify({
+        original_user: user,
+        access_time: new Date().toISOString(),
+        target_stock: stockId
+      }))
+
+      // Keep the super admin user data as-is since the layout already handles super_admin role
+      // No need to modify the user session - the layout will allow super_admin to access any stock
+    }
 
     router.push(`/dashboard/stock/${stockId}`)
   }

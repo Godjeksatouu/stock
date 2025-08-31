@@ -60,16 +60,15 @@ export default function StockLayout({
 
   const handleLogout = () => {
     // Check if this is a super admin viewing a stock
-    const superAdminSession = localStorage.getItem('superAdminSession')
-    if (superAdminSession && user?.role === 'super_admin') {
-      // Restore super admin session and return to super admin dashboard
-      localStorage.setItem('user', superAdminSession)
-      localStorage.removeItem('superAdminSession')
+    const superAdminContext = localStorage.getItem('superadmin_context')
+    if (superAdminContext && user?.role === 'super_admin') {
+      // Return to super admin dashboard
+      localStorage.removeItem('superadmin_context')
       router.push('/dashboard/super-admin')
     } else {
       // Regular logout
       localStorage.removeItem("user")
-      localStorage.removeItem('superAdminSession')
+      localStorage.removeItem('superadmin_context')
       router.push("/")
     }
   }

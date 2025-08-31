@@ -270,15 +270,15 @@ export default function EnhancedSidebar({ stockId, userRole, onLogout }: Enhance
 
   const stockName = stockNames[stockId as keyof typeof stockNames] || stockId
 
-  // Choose menu items based on user role
-  const menuItems = userRole === 'super_admin'
+  // Choose menu items based on user role and context
+  const menuItems = userRole === 'super_admin' && !isSuperAdminViewingStock
     ? superAdminMenuItems
     : userRole === 'caissier'
     ? caissierMenuItems
     : getStockMenuItems(selectedStock)
 
   const handleNavigation = (path: string) => {
-    if (userRole === 'super_admin') {
+    if (userRole === 'super_admin' && !isSuperAdminViewingStock) {
       router.push(`/dashboard/super-admin${path}`)
     } else {
       router.push(`/dashboard/stock/${selectedStock}${path}`)
@@ -288,17 +288,13 @@ export default function EnhancedSidebar({ stockId, userRole, onLogout }: Enhance
 
 
   const handleReturnToSuperAdmin = () => {
-    // Restore super admin session and return to super admin dashboard
-    const superAdminSession = localStorage.getItem('superAdminSession')
-    if (superAdminSession) {
-      localStorage.setItem('user', superAdminSession)
-      localStorage.removeItem('superAdminSession')
-    }
+    // Return to super admin dashboard
+    localStorage.removeItem('superadmin_context')
     router.push('/dashboard/super-admin')
   }
 
   const isActive = (path: string) => {
-    if (userRole === 'super_admin') {
+    if (userRole === 'super_admin' && !isSuperAdminViewingStock) {
       return pathname.includes(path) || (path === "" && pathname === "/dashboard/super-admin")
     }
     return pathname.includes(`/dashboard/stock/${selectedStock}${path}`) ||

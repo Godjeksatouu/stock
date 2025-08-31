@@ -8,8 +8,8 @@ import RoleGuard from "@/components/role-guard"
 
 const stockNames = {
   "al-ouloum": "Librairie Al Ouloum",
-  renaissance: "Librairie La Renaissance",
-  gros: "Gros (Dépôt général)",
+  "renaissance": "Librairie La Renaissance",
+  "gros": "Gros (Dépôt général)",
 }
 
 export default function StockDashboard() {
